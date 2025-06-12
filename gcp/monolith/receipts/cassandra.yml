@@ -59,7 +59,9 @@ metadata:
     app: cassandra
 spec:
   serviceName: cassandra
-  replicas: 3
+  #SEBA
+  #replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: cassandra
@@ -96,7 +98,10 @@ spec:
           name: thrift
         resources:
           requests:
-            cpu: "1500m"
+            #SEBA
+            #cpu: "1500m"
+            #memory: 2Gi
+            cpu: "1000m"
             memory: 2Gi
           limits:
             cpu: "2000m"
@@ -146,6 +151,8 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
+          #SEBA
+          #storage: 100Gi
           storage: 100Gi
 ---
 apiVersion: v1
@@ -162,3 +169,22 @@ spec:
   selector:
     app: cassandra
 ---
+# SEBA
+# NEW SERVICE for External Access
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cassandra # Selector must match your Cassandra pods
+  name: cassandra-external # Give it a different name
+  namespace: thingsboard
+spec:
+  # clusterIP: None # DO NOT set clusterIP: None here
+  ports:
+    - port: 9042 # Port of the service
+      targetPort: 9042 # Port on the container
+      protocol: TCP
+      name: cql # Give it a name for clarity
+  selector:
+    app: cassandra # This must match the labels on your Cassandra pods
+  type: LoadBalancer # This is the service type for external access

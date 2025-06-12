@@ -24,6 +24,9 @@ metadata:
 data:
   SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
   SPRING_DRIVER_CLASS_NAME: org.postgresql.Driver
-  SPRING_DATASOURCE_URL: jdbc:postgresql://YOUR_DB_IP_ADDRESS:5432/thingsboard
+  SPRING_DATASOURCE_URL: jdbc:postgresql://10.125.0.2:5432/thingsboard
   SPRING_DATASOURCE_USERNAME: postgres
-  SPRING_DATASOURCE_PASSWORD: YOUR_DB_PASSWORD
+  SPRING_DATASOURCE_PASSWORD: Iotify2@25
+  DATABASE_TS_TYPE: cassandra
+  CASSANDRA_URL: cassandra:9042
+  CASSANDRA_LOCAL_DATACENTER: us-central1
