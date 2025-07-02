@@ -1,0 +1,5 @@
+catalogs:
+  cassandra: |
+    connector.name=cassandra
+    cassandra.contact-points=cassandra.thingsboard.svc.cluster.local
+    cassandra.load-policy.dc-aware.local-dc=us-central1

@@ -1,0 +1,19 @@
+# SEBA
+# NEW SERVICE for External Access
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: superset # Selector must match your Cassandra pods
+  name: superset-external # Give it a different name
+  namespace: superset
+spec:
+  # clusterIP: None # DO NOT set clusterIP: None here
+  ports:
+    - port: 8088 # Port of the service
+      targetPort: 8088 # Port on the container
+      protocol: TCP
+      name: supersetlb # Give it a name for clarity
+  selector:
+    app: superset # This must match the labels on your Cassandra pods
+  type: LoadBalancer # This is the service type for external access

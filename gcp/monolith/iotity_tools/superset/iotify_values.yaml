@@ -1,0 +1,31 @@
+
+extraSecretEnv:
+  SUPERSET_SECRET_KEY: '45Upn1Sm3wppV2w07R35Dbz5HsbM7MmVOCVApqQadxaqtzQTf33DmCA+'
+
+configOverrides:
+  secret: |
+    SECRET_KEY = '45Upn1Sm3wppV2w07R35Dbz5HsbM7MmVOCVApqQadxaqtzQTf33DmCA+'
+
+bootstrapScript: |
+  #!/bin/bash
+  
+  # Install system-level dependencies
+  apt-get update && apt-get install -y \
+    python3-dev \
+    default-libmysqlclient-dev \
+    build-essential \
+    pkg-config
+
+  # Install required Python packages
+  pip install \
+    authlib \
+    psycopg2-binary \
+    mysqlclient \
+  
+  # Install Trino Support
+  pip install trino
+
+  # Create bootstrap file if it doesn't exist
+  if [ ! -f ~/bootstrap ]; then
+    echo "Running Superset with uid {{ .Values.runAsUser }}" > ~/bootstrap
+  fi
