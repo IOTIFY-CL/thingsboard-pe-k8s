@@ -59,7 +59,9 @@ metadata:
     app: cassandra
 spec:
   serviceName: cassandra
-  replicas: 2
+  #SEBA
+  #replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: cassandra
@@ -96,15 +98,14 @@ spec:
           name: thrift
         resources:
           requests:
+            #SEBA
             #cpu: "1500m"
-            cpu: "2000m"
             #memory: 2Gi
-            memory: 6Gi
+            cpu: "1000m"
+            memory: 2Gi
           limits:
-            #cpu: "2000m"
-            cpu: "4000m"
-            #memory: 6Gi
-            memory: 12Gi
+            cpu: "2000m"
+            memory: 6Gi
         securityContext:
           capabilities:
             add:
@@ -129,12 +130,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
-          - name: MAX_HEAP_SIZE
-            value: "10G" # Set to 10 Gigabytes (or "8G" if you want to be more conservative)
-          - name: HEAP_NEWSIZE
-            value: "2G" # Adjust NewGen size, typically 1/4 to 1/2 of MAX_HEAP_SIZE
-          - name: JVM_OPTS
-            value: "-Dcassandra.commitlog.ignore_corrupted_segments=true"
         readinessProbe:
           exec:
             command:
@@ -156,6 +151,8 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
+          #SEBA
+          #storage: 100Gi
           storage: 100Gi
 ---
 apiVersion: v1

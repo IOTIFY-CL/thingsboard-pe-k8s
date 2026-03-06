@@ -4,7 +4,7 @@ metadata:
   name: managed-cert
 spec:
   domains:
-    - PUT_YOUR_DOMAIN_HERE
+    - portal.iotify.cl
 ---
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
