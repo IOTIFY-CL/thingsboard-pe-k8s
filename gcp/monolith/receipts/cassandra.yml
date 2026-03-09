@@ -53,62 +53,49 @@ data:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: cassandra
-  namespace: thingsboard
   labels:
     app: cassandra
+  name: cassandra
+  namespace: thingsboard
 spec:
-  serviceName: cassandra
-  replicas: 2
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: cassandra
+  serviceName: cassandra
   template:
     metadata:
       labels:
         app: cassandra
     spec:
-      nodeSelector:
-        role: cassandra
-      volumes:
-      - name: cassandra-probe-config
-        configMap:
-          name: cassandra-probe-config
-          items:
-          - key: probe
-            path: ready-probe.sh
-            mode: 0777
-      terminationGracePeriodSeconds: 1800
       containers:
-      - name: cassandra
+      - env:
+        - name: CASSANDRA_SEEDS
+          value: cassandra-0.cassandra.thingsboard.svc.cluster.local
+        - name: CASSANDRA_CLUSTER_NAME
+          value: Thingsboard Cluster
+        - name: CASSANDRA_AUTO_BOOTSTRAP
+          value: "false"
+        - name: CASSANDRA_ENDPOINT_SNITCH
+          value: GoogleCloudSnitch
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: MAX_HEAP_SIZE
+          value: "16G"
+        - name: HEAP_NEWSIZE
+          value: "4G"
+        - name: JVM_OPTS
+          value: -Dcassandra.commitlog.ignore_corrupted_segments=true
         image: cassandra:4.0.1
         imagePullPolicy: Always
-        ports:
-        - containerPort: 7000
-          name: intra-node
-        - containerPort: 7001
-          name: tls-intra-node
-        - containerPort: 7199
-          name: jmx
-        - containerPort: 9042
-          name: cql
-        - containerPort: 9160
-          name: thrift
-        resources:
-          requests:
-            #cpu: "1500m"
-            cpu: "2000m"
-            #memory: 2Gi
-            memory: 6Gi
-          limits:
-            #cpu: "2000m"
-            cpu: "4000m"
-            #memory: 6Gi
-            memory: 12Gi
-        securityContext:
-          capabilities:
-            add:
-              - IPC_LOCK
         lifecycle:
           preStop:
             exec:
@@ -116,47 +103,84 @@ spec:
               - /bin/sh
               - -c
               - nodetool drain
-        env:
-          - name: CASSANDRA_SEEDS
-            value: "cassandra-0.cassandra.thingsboard.svc.cluster.local"
-          - name: CASSANDRA_CLUSTER_NAME
-            value: "Thingsboard Cluster"
-          - name: CASSANDRA_AUTO_BOOTSTRAP
-            value: "false"
-          - name: CASSANDRA_ENDPOINT_SNITCH
-            value: GoogleCloudSnitch
-          - name: POD_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          - name: MAX_HEAP_SIZE
-            value: "10G" # Set to 10 Gigabytes (or "8G" if you want to be more conservative)
-          - name: HEAP_NEWSIZE
-            value: "2G" # Adjust NewGen size, typically 1/4 to 1/2 of MAX_HEAP_SIZE
-          - name: JVM_OPTS
-            value: "-Dcassandra.commitlog.ignore_corrupted_segments=true"
+        name: cassandra
+        ports:
+        - containerPort: 7000
+          name: intra-node
+          protocol: TCP
+        - containerPort: 7001
+          name: tls-intra-node
+          protocol: TCP
+        - containerPort: 7199
+          name: jmx
+          protocol: TCP
+        - containerPort: 9042
+          name: cql
+          protocol: TCP
+        - containerPort: 9160
+          name: thrift
+          protocol: TCP
         readinessProbe:
           exec:
             command:
             - /bin/bash
             - -c
             - /probe/ready-probe.sh
+          failureThreshold: 3
           initialDelaySeconds: 60
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: "4"
+            memory: 20Gi
+          requests:
+            cpu: "2"
+            memory: 16Gi
+        securityContext:
+          capabilities:
+            add:
+            - IPC_LOCK
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
-        - name: cassandra-probe-config
-          mountPath: /probe
-        - name: cassandra-data
-          mountPath: /var/lib/cassandra
-          readOnly: false
+        - mountPath: /probe
+          name: cassandra-probe-config
+        - mountPath: /var/lib/cassandra
+          name: cassandra-data
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        role: cassandra
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 1800
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: probe
+            mode: 511
+            path: ready-probe.sh
+          name: cassandra-probe-config
+        name: cassandra-probe-config
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
   volumeClaimTemplates:
-  - metadata:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
       name: cassandra-data
     spec:
-      accessModes: [ "ReadWriteOnce" ]
+      accessModes:
+      - ReadWriteOnce
       resources:
         requests:
           storage: 100Gi
+      volumeMode: Filesystem
 ---
 apiVersion: v1
 kind: Service
